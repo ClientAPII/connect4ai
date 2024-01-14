@@ -1,5 +1,6 @@
 import ai1
 import ai2
+import time
 from helper import *
 import pyarmor
 
@@ -34,10 +35,16 @@ def play_one_game():
 
     while game_status == GAME_NOT_FINISHED:
         player = select_player(turn=turn, start_player=start_player)
-        output_board(arr=arr)
+        output_board(arr=arr)  # Zeigt das Spielbrett an
         output_active_player(player=player)
         player_type = select_player_type(player=player)
+
+        start_time = time.time()  # Erfassen Sie die Startzeit vor dem Aufruf der KI
         col = select_column(arr=arr, player=player, player_type=player_type)
+        end_time = time.time()  # Erfassen Sie die Endzeit nach dem Aufruf der KI
+
+        print(f"AI took {end_time - start_time} seconds to make a move.")  # Drucken Sie die verstrichene Zeit
+
         arr = place_token(arr=arr, col=col, player=player)
         game_status = get_game_status(arr=arr)
         turn += 1
