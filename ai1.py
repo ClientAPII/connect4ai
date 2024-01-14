@@ -1,16 +1,14 @@
 import copy
 import math
-import time
 import random
 from helper import *
+
 
 # Constants
 EMPTY = 0
 PLAYER_1 = 1
 PLAYER_2 = 2
 WINDOW_LENGTH = 4
-MAX_Depth = 6
-TIME_LIMIT = 0.2
 
 def score_position(board, piece):
     score = 0
@@ -18,6 +16,7 @@ def score_position(board, piece):
     center_array = [int(i[N_COLS//2]) for i in board]
     center_count = center_array.count(piece)
     score += center_count * 3
+
     # Score horizontal
     for row in range(N_ROWS):
         row_array = [int(i) for i in board[row]]
@@ -66,21 +65,6 @@ def score_position(board, piece):
 
     return score
 
-def ai(arr, player):
-    best_score = -math.inf
-    best_col = random.choice(get_valid_locations(arr))
-    start_time = time.time()
-
-    for depth in range(1, MAX_Depth + 1):  # Use MAX_Depth instead of MAX_DEPTH
-        if time.time() - start_time > TIME_LIMIT:
-            break  # Break the loop if time limit is exceeded
-        col, score = minimax(arr, depth, -math.inf, math.inf, True)
-        if score > best_score:
-            best_score = score
-            best_col = col
-
-    return best_col
-
 def get_next_open_row(board, col):
     for r in range(N_ROWS-1, -1, -1):
         if board[r][col] == EMPTY:
@@ -118,22 +102,22 @@ def get_valid_locations(board):
     for col in range(N_COLS):
         if not column_is_full(board, col):
             valid_locations.append(col)
+
+    # Prioritize moves that complete or block a connection of four
+    for col in valid_locations:
+        if winning_move(board, col):
+            valid_locations.remove(col)
+            valid_locations.insert(0, col)
+
+    # Prioritize moves in the center of the board
+    valid_locations.sort(key=lambda x: abs(x - N_COLS // 2))
+
     return valid_locations
 
 def is_terminal_node(board):
     return winning_move(board, PLAYER_1) or winning_move(board, PLAYER_2) or len(get_valid_locations(board)) == 0
 
-# Add a global variable for the transposition table
-transposition_table = {}
-
 def minimax(board, depth, alpha, beta, maximizingPlayer):
-    # Convert the board to a tuple so it can be used as a dictionary key
-    board_tuple = tuple(map(tuple, board))
-
-    # Check if the value is in the transposition table
-    if (board_tuple, depth, maximizingPlayer) in transposition_table:
-        return transposition_table[(board_tuple, depth, maximizingPlayer)]
-
     valid_locations = get_valid_locations(board)
     is_terminal = is_terminal_node(board)
     if depth == 0 or is_terminal:
@@ -160,8 +144,6 @@ def minimax(board, depth, alpha, beta, maximizingPlayer):
             alpha = max(alpha, value)
             if alpha >= beta:
                 break
-        # Store the value in the transposition table before returning it
-        transposition_table[(board_tuple, depth, maximizingPlayer)] = (column, value)
         return column, value
 
     else: # Minimizing player
@@ -178,6 +160,10 @@ def minimax(board, depth, alpha, beta, maximizingPlayer):
             beta = min(beta, value)
             if alpha >= beta:
                 break
-        # Store the value in the transposition table before returning it
-        transposition_table[(board_tuple, depth, maximizingPlayer)] = (column, value)
         return column, value
+
+def ai(arr, player):
+    depth = 4
+    col, minimax_score = minimax(arr, depth, -math.inf, math.inf, True)
+
+    return col
