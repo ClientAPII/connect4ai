@@ -33,32 +33,19 @@ def score_position(board, piece):
     # Center column preference
     center_array = [int(i[N_COLS//2]) for i in board]
     center_count = center_array.count(piece)
-    score += center_count * 6
+    score += center_count * 3
 
     # Offensive and defensive scoring
     for window in get_all_windows(board):
         if window.count(piece) == 4:
             score += 1000
         elif window.count(piece) == 3 and window.count(EMPTY) == 1:
-            score += 50
+            score += 100
         elif window.count(piece) == 2 and window.count(EMPTY) == 2:
-            score += 10
+            score += 50
+
         if window.count(opponent_piece) == 3 and window.count(EMPTY) == 1:
             score -= 80
-
-    # Add score for open two-in-a-row and three-in-a-row
-    for window in get_all_windows(board):
-        if window.count(piece) == 2 and window.count(EMPTY) == 2:
-            score += 20
-        elif window.count(piece) == 3 and window.count(EMPTY) == 1:
-            score += 30
-
-    # Add penalty for opponent's open two-in-a-row and three-in-a-row
-    for window in get_all_windows(board):
-        if window.count(opponent_piece) == 2 and window.count(EMPTY) == 2:
-            score -= 20
-        elif window.count(opponent_piece) == 3 and window.count(EMPTY) == 1:
-            score -= 30
 
     return score
 
