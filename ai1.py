@@ -60,7 +60,7 @@ def score_position(board, piece):
 
     return score
 
-def get_all_windows(board):
+def get_all_windows(board): #Alle Spielmöglichkeiten
     windows = []
 
     # Horizontal windows
@@ -85,13 +85,13 @@ def get_all_windows(board):
 
     return windows
 
-def get_next_open_row(board, col):
+def get_next_open_row(board, col): #Gibt die nächste freie Reihe zurück
     for r in range(N_ROWS-1, -1, -1):
         if board[r][col] == EMPTY:
             return r
     return -1
 
-def winning_move(board, piece):
+def winning_move(board, piece): #Gibt True zurück, wenn ein Spieler gewonnen hat
     for c in range(N_COLS-3):
         for r in range(N_ROWS):
             if board[r][c] == piece and board[r][c+1] == piece and board[r][c+2] == piece and board[r][c+3] == piece:
@@ -114,7 +114,7 @@ def winning_move(board, piece):
 
     return False
 
-def get_valid_locations(board):
+def get_valid_locations(board): #Gibt alle gültigen Züge an, welche ein Spieler machen kann
     valid_locations = []
     for col in range(N_COLS):
         if not column_is_full(board, col):
@@ -125,10 +125,11 @@ def get_valid_locations(board):
 
     return valid_locations
 
-def is_terminal_node(board):
+def is_terminal_node(board): # Hat ein Spieler gewonnen?
     return winning_move(board, PLAYER_1) or winning_move(board, PLAYER_2) or len(get_valid_locations(board)) == 0
 
 def minimax(board, depth, alpha, beta, maximizingPlayer):
+    # Here is where the magic happens, Minimax Algorithmus it Alpha-Beta Pruning
     valid_locations = get_valid_locations(board)
     is_terminal = is_terminal_node(board)
 
@@ -195,7 +196,7 @@ def minimax(board, depth, alpha, beta, maximizingPlayer):
         return column, value
 
 def ai(arr, player):
-    depth = 8
+    depth = 8 # tiefe hier anpassbar
     col, minimax_score = minimax(arr, depth, -math.inf, math.inf, True)
 
     return col
