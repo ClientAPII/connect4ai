@@ -12,6 +12,8 @@ from helper import *
 
 LOG_TO_FILE = False
 
+transposition_table = {}
+
 # Configure the logger based on the flag
 if LOG_TO_FILE:
     logging.basicConfig(filename='log.txt', level=logging.DEBUG, format='%(message)s')
@@ -31,32 +33,24 @@ def score_position(board, piece):
     # Center column preference
     center_array = [int(i[N_COLS//2]) for i in board]
     center_count = center_array.count(piece)
-    score += center_count * 6
+    score += center_count * 3
 
     # Offensive and defensive scoring
     for window in get_all_windows(board):
         if window.count(piece) == 4:
             score += 1000
         elif window.count(piece) == 3 and window.count(EMPTY) == 1:
-            score += 50
+            score += 100
         elif window.count(piece) == 2 and window.count(EMPTY) == 2:
-            score += 10
+            score += 50
+
+        # Potential winning position
+        if window.count(piece) == 3 and window.count(EMPTY) == 1:
+            score += 5
+
+        # Threat
         if window.count(opponent_piece) == 3 and window.count(EMPTY) == 1:
             score -= 80
-
-    # Add score for open two-in-a-row and three-in-a-row
-    for window in get_all_windows(board):
-        if window.count(piece) == 2 and window.count(EMPTY) == 2:
-            score += 20
-        elif window.count(piece) == 3 and window.count(EMPTY) == 1:
-            score += 30
-
-    # Add penalty for opponent's open two-in-a-row and three-in-a-row
-    for window in get_all_windows(board):
-        if window.count(opponent_piece) == 2 and window.count(EMPTY) == 2:
-            score -= 20
-        elif window.count(opponent_piece) == 3 and window.count(EMPTY) == 1:
-            score -= 30
 
     return score
 
@@ -120,12 +114,8 @@ def get_valid_locations(board):
         if not column_is_full(board, col):
             valid_locations.append(col)
 
-    for col in valid_locations:
-        if winning_move(board, col):
-            valid_locations.remove(col)
-            valid_locations.insert(0, col)
-
-    valid_locations.sort(key=lambda x: abs(x - N_COLS // 2), reverse=True)
+    # Sort the valid moves based on their distance from the center column
+    valid_locations.sort(key=lambda x: abs(x - N_COLS // 2))
 
     return valid_locations
 
@@ -135,6 +125,14 @@ def is_terminal_node(board):
 def minimax(board, depth, alpha, beta, maximizingPlayer):
     valid_locations = get_valid_locations(board)
     is_terminal = is_terminal_node(board)
+
+    # Convert the board to a tuple so it can be used as a dictionary key
+    board_tuple = tuple(map(tuple, board))
+
+    # Check if the board state is in the transposition table
+    if board_tuple in transposition_table:
+        return transposition_table[board_tuple]
+
     if depth == 0 or is_terminal:
         if is_terminal:
             if winning_move(board, PLAYER_2):
@@ -145,10 +143,15 @@ def minimax(board, depth, alpha, beta, maximizingPlayer):
                 return (None, 0)
         else:
             return (None, score_position(board, PLAYER_2))
+
+    # Sort the valid moves based on their scores
+    scored_moves = [(col, score_position(board, PLAYER_2 if maximizingPlayer else PLAYER_1)) for col in valid_locations]
+    scored_moves.sort(key=lambda x: -x[1] if maximizingPlayer else x[1])
+
     if maximizingPlayer:
         value = -math.inf
-        column = random.choice(valid_locations)
-        for col in valid_locations:
+        column = scored_moves[0][0]
+        for col, _ in scored_moves:
             row = get_next_open_row(board, col)
             b_copy = copy.deepcopy(board)
             place_token(b_copy, col, PLAYER_2)
@@ -161,12 +164,14 @@ def minimax(board, depth, alpha, beta, maximizingPlayer):
             alpha = max(alpha, value)
             if alpha >= beta:
                 break
+        # Store the result in the transposition table
+        transposition_table[board_tuple] = (column, value)
         return column, value
 
     else:
         value = math.inf
-        column = random.choice(valid_locations)
-        for col in valid_locations:
+        column = scored_moves[0][0]
+        for col, _ in scored_moves:
             row = get_next_open_row(board, col)
             b_copy = copy.deepcopy(board)
             place_token(b_copy, col, PLAYER_1)
@@ -179,10 +184,12 @@ def minimax(board, depth, alpha, beta, maximizingPlayer):
             beta = min(beta, value)
             if alpha >= beta:
                 break
+        # Store the result in the transposition table
+        transposition_table[board_tuple] = (column, value)
         return column, value
 
 def ai(arr, player):
-    depth = 4
+    depth = 8
     col, minimax_score = minimax(arr, depth, -math.inf, math.inf, True)
 
     return col
