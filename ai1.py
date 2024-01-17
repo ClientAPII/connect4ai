@@ -52,6 +52,12 @@ def score_position(board, piece):
         if window.count(opponent_piece) == 3 and window.count(EMPTY) == 1:
             score -= 80
 
+    # Favor certain rows based on the player
+    favored_rows = [0, 2, 4, 6] if piece == PLAYER_1 else [1, 3, 5, 7]
+    for row in favored_rows:
+        if row < len(board):
+            score += board[row].count(piece)
+
     return score
 
 def get_all_windows(board):
