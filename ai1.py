@@ -1,7 +1,22 @@
 import copy
 import math
 import random
+import logging
 from helper import *
+
+# Bevor sie loggen wollen, ändern sie die color codes in config.py zu folgendem:
+#GREY = ''
+#BLUE = ''
+#YELLOW = ''
+#RED = ''
+
+LOG_TO_FILE = False
+
+# Configure the logger based on the flag
+if LOG_TO_FILE:
+    logging.basicConfig(filename='log.txt', level=logging.DEBUG, format='%(message)s')
+else:
+    pass
 
 # Constants
 EMPTY = 0
@@ -16,18 +31,32 @@ def score_position(board, piece):
     # Center column preference
     center_array = [int(i[N_COLS//2]) for i in board]
     center_count = center_array.count(piece)
-    score += center_count * 3
+    score += center_count * 6
 
     # Offensive and defensive scoring
     for window in get_all_windows(board):
         if window.count(piece) == 4:
-            score += 100
+            score += 1000
         elif window.count(piece) == 3 and window.count(EMPTY) == 1:
-            score += 5
+            score += 50
         elif window.count(piece) == 2 and window.count(EMPTY) == 2:
-            score += 2
+            score += 10
         if window.count(opponent_piece) == 3 and window.count(EMPTY) == 1:
-            score -= 4
+            score -= 80
+
+    # Add score for open two-in-a-row and three-in-a-row
+    for window in get_all_windows(board):
+        if window.count(piece) == 2 and window.count(EMPTY) == 2:
+            score += 20
+        elif window.count(piece) == 3 and window.count(EMPTY) == 1:
+            score += 30
+
+    # Add penalty for opponent's open two-in-a-row and three-in-a-row
+    for window in get_all_windows(board):
+        if window.count(opponent_piece) == 2 and window.count(EMPTY) == 2:
+            score -= 20
+        elif window.count(opponent_piece) == 3 and window.count(EMPTY) == 1:
+            score -= 30
 
     return score
 
@@ -96,7 +125,7 @@ def get_valid_locations(board):
             valid_locations.remove(col)
             valid_locations.insert(0, col)
 
-    valid_locations.sort(key=lambda x: abs(x - N_COLS // 2))
+    valid_locations.sort(key=lambda x: abs(x - N_COLS // 2), reverse=True)
 
     return valid_locations
 
@@ -123,6 +152,8 @@ def minimax(board, depth, alpha, beta, maximizingPlayer):
             row = get_next_open_row(board, col)
             b_copy = copy.deepcopy(board)
             place_token(b_copy, col, PLAYER_2)
+            if winning_move(b_copy, PLAYER_2):
+                return (col, 10000000000000)
             new_score = minimax(b_copy, depth-1, alpha, beta, False)[1]
             if new_score > value:
                 value = new_score
@@ -139,6 +170,8 @@ def minimax(board, depth, alpha, beta, maximizingPlayer):
             row = get_next_open_row(board, col)
             b_copy = copy.deepcopy(board)
             place_token(b_copy, col, PLAYER_1)
+            if winning_move(b_copy, PLAYER_1):
+                return (col, -10000000000000)
             new_score = minimax(b_copy, depth-1, alpha, beta, True)[1]
             if new_score < value:
                 value = new_score
