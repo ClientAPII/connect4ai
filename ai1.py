@@ -11,53 +11,50 @@ WINDOW_LENGTH = 4
 
 def score_position(board, piece):
     score = 0
+    opponent_piece = PLAYER_1 if piece == PLAYER_2 else PLAYER_2
+
+    # Center column preference
     center_array = [int(i[N_COLS//2]) for i in board]
     center_count = center_array.count(piece)
     score += center_count * 3
 
-    for row in range(N_ROWS):
-        row_array = [int(i) for i in board[row]]
-        for c in range(N_COLS-3):
-            window = row_array[c:c+WINDOW_LENGTH]
-            if window.count(piece) == 4:
-                score += 100
-            elif window.count(piece) == 3 and window.count(EMPTY) == 1:
-                score += 5
-            elif window.count(piece) == 2 and window.count(EMPTY) == 2:
-                score += 2
-
-    for col in range(N_COLS):
-        col_array = [int(board[row][col]) for row in range(N_ROWS)]
-        for r in range(N_ROWS-3):
-            window = col_array[r:r+WINDOW_LENGTH]
-            if window.count(piece) == 4:
-                score += 100
-            elif window.count(piece) == 3 and window.count(EMPTY) == 1:
-                score += 5
-            elif window.count(piece) == 2 and window.count(EMPTY) == 2:
-                score += 2
-
-    for r in range(N_ROWS-3):
-        for c in range(N_COLS-3):
-            window = [board[r+i][c+i] for i in range(WINDOW_LENGTH)]
-            if window.count(piece) == 4:
-                score += 100
-            elif window.count(piece) == 3 and window.count(EMPTY) == 1:
-                score += 5
-            elif window.count(piece) == 2 and window.count(EMPTY) == 2:
-                score += 2
-
-    for r in range(N_ROWS-3, N_ROWS):
-        for c in range(N_COLS-3):
-            window = [board[r-i][c+i] for i in range(WINDOW_LENGTH)]
-            if window.count(piece) == 4:
-                score += 100
-            elif window.count(piece) == 3 and window.count(EMPTY) == 1:
-                score += 5
-            elif window.count(piece) == 2 and window.count(EMPTY) == 2:
-                score += 2
+    # Offensive and defensive scoring
+    for window in get_all_windows(board):
+        if window.count(piece) == 4:
+            score += 100
+        elif window.count(piece) == 3 and window.count(EMPTY) == 1:
+            score += 5
+        elif window.count(piece) == 2 and window.count(EMPTY) == 2:
+            score += 2
+        if window.count(opponent_piece) == 3 and window.count(EMPTY) == 1:
+            score -= 4
 
     return score
+
+def get_all_windows(board):
+    windows = []
+
+    # Horizontal windows
+    for row in range(N_ROWS):
+        for col in range(N_COLS - 3):
+            windows.append(board[row][col:col+WINDOW_LENGTH])
+
+    # Vertical windows
+    for row in range(N_ROWS - 3):
+        for col in range(N_COLS):
+            windows.append([board[row+i][col] for i in range(WINDOW_LENGTH)])
+
+    # Positive diagonal windows
+    for row in range(N_ROWS - 3):
+        for col in range(N_COLS - 3):
+            windows.append([board[row+i][col+i] for i in range(WINDOW_LENGTH)])
+
+    # Negative diagonal windows
+    for row in range(3, N_ROWS):
+        for col in range(N_COLS - 3):
+            windows.append([board[row-i][col+i] for i in range(WINDOW_LENGTH)])
+
+    return windows
 
 def get_next_open_row(board, col):
     for r in range(N_ROWS-1, -1, -1):
